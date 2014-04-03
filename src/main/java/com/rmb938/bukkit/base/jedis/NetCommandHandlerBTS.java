@@ -1,10 +1,12 @@
 package com.rmb938.bukkit.base.jedis;
 
 import com.rmb938.bukkit.base.MN2BukkitBase;
+import com.rmb938.jedis.JedisManager;
 import com.rmb938.jedis.net.NetChannel;
 import com.rmb938.jedis.net.NetCommandHandler;
 import org.json.JSONException;
 import org.json.JSONObject;
+import redis.clients.jedis.Jedis;
 
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -24,13 +26,18 @@ public class NetCommandHandlerBTS extends NetCommandHandler {
             String fromBungee = jsonObject.getString("fromBungee");
             String toServer = jsonObject.getString("toServerName");
             String[] serverInfo = toServer.split(".");
+            int port = Integer.parseInt(serverInfo[5]);
 
-            if (serverInfo[1].equalsIgnoreCase(plugin.getServerConfig().serverName)) {
+            Jedis jedis = JedisManager.getJedis();
+            String serverName = jedis.get(plugin.getServer().getIp()+"."+plugin.getServer().getPort());
+            JedisManager.returnJedis(jedis);
+
+            if (serverInfo[4].equalsIgnoreCase(serverName)) {
                 return;
             }
 
             if (serverInfo[1].equalsIgnoreCase("*") == false) {
-                if (Integer.parseInt(serverInfo[1]) != plugin.getServer().getPort()) {
+                if (port != plugin.getServer().getPort()) {
                     return;
                 }
             }
