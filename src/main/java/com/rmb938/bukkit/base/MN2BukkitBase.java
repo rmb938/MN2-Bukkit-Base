@@ -84,7 +84,7 @@ public class MN2BukkitBase extends JavaPlugin {
         Jedis jedis = JedisManager.getJedis();
         String serverName = jedis.get(getServer().getIp()+"."+getServer().getPort());
         JedisManager.returnJedis(jedis);
-        NetCommandSTSC netCommandSTSC = new NetCommandSTSC("heartbeat", serverName+"."+getServer().getPort(), getServer().getIp());
+        NetCommandSTSC netCommandSTSC = new NetCommandSTSC("heartbeat", getServer().getPort(), getServer().getIp());
         netCommandSTSC.addArg("currentPlayers", getServer().getOnlinePlayers().length);
         netCommandSTSC.flush();
     }

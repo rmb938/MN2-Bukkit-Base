@@ -4,8 +4,10 @@ import com.rmb938.bukkit.base.MN2BukkitBase;
 import com.rmb938.bukkit.base.entity.User;
 import com.rmb938.bukkit.base.entity.info.UserInfo;
 import com.rmb938.database.DatabaseAPI;
+import com.rmb938.jedis.JedisManager;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.bukkit.entity.Player;
+import redis.clients.jedis.Jedis;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,15 +21,17 @@ public class UserLoader {
 
     public UserLoader(MN2BukkitBase plugin) {
         this.plugin = plugin;
+        createTable();
     }
 
     public void createTable() {
         if (DatabaseAPI.getMySQLDatabase().isTable("mn2_users") == false) {
             DatabaseAPI.getMySQLDatabase().createTable("CREATE TABLE IF NOT EXISTS `mn2_users` (" +
                     " `userUUID` varchar(36) NOT NULL," +
+                    " `lastUserName` varchar(16) NOT NULL," +
                     " `server` varchar(64) NOT NULL," +
                     " PRIMARY KEY (`userUUID`)" +
-                    ") ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;");
+                    ") ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
         }
     }
 
@@ -35,7 +39,7 @@ public class UserLoader {
         if (users.containsKey(player.getUniqueId())) {
             return users.get(player.getUniqueId());
         }
-        ArrayList beans = DatabaseAPI.getMySQLDatabase().getBeansInfo("select userUUID from `mn2_users` where userUUID='"+player.getUniqueId().toString()+"'", new BeanListHandler<>(User.class));
+        ArrayList beans = DatabaseAPI.getMySQLDatabase().getBeansInfo("select userUUID, lastUserName from `mn2_users` where userUUID='"+player.getUniqueId().toString()+"'", new BeanListHandler<>(User.class));
         if (beans.isEmpty()) {
             plugin.getLogger().info("No user found for "+player.getName()+" ("+player.getUniqueId().toString()+") creating new user.");
             createUser(player);
@@ -59,7 +63,10 @@ public class UserLoader {
     }
 
     private void createUser(Player player) {
-        DatabaseAPI.getMySQLDatabase().updateQueryPS("INSERT INTO `mn2_users` (uuid) values (?)", player.getUniqueId());
+        Jedis jedis = JedisManager.getJedis();
+        String serverName = jedis.get(plugin.getServer().getIp()+"."+plugin.getServer().getPort());
+        JedisManager.returnJedis(jedis);
+        DatabaseAPI.getMySQLDatabase().updateQueryPS("INSERT INTO `mn2_users` (uuid, lastUserName, server) values (?, ?, ?)", player.getUniqueId(), player.getName(), serverName);
     }
 
     public void saveUser(Player player) {
@@ -67,6 +74,7 @@ public class UserLoader {
         if (user == null) {
             return;
         }
+        DatabaseAPI.getMySQLDatabase().updateQueryPS("UPDATE `mn2_users` SET lastUserName = ? where userUUID='"+user.getUserUUID()+"'", player.getName());
         for (UserInfo userInfo : user.getUserInfo()) {
             UserInfoLoader.getUserInfoLoaders().get(userInfo.getUserInfoName()).saveUserInfo(user);
         }
