@@ -11,8 +11,6 @@ public class Config extends ConfigModel {
 		CONFIG_HEADER = "MN2 Bukkit Base Configuration File";
 	}
 
-    public String serverName = "unknown";
-
 	public String redis_address = "127.0.0.1";
 
     public String mySQL_address = "127.0.0.1";

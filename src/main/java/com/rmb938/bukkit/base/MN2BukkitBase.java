@@ -11,6 +11,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.plugin.java.JavaPlugin;
+import redis.clients.jedis.Jedis;
 
 import java.util.logging.Level;
 
@@ -47,6 +48,9 @@ public class MN2BukkitBase extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        Jedis jedis = JedisManager.getJedis();
+        jedis.del(getServer().getIp()+"."+getServer().getPort());
+        JedisManager.returnJedis(jedis);
         JedisManager.shutDown();
     }
 
@@ -67,19 +71,29 @@ public class MN2BukkitBase extends JavaPlugin {
     }
 
     private void updateServer() {
-        NetCommandSTB netCommandSTB = new NetCommandSTB("updateServer", serverConfig.serverName+"."+getServer().getPort());
+        Jedis jedis = JedisManager.getJedis();
+        String serverName = jedis.get(getServer().getIp()+"."+getServer().getPort());
+        JedisManager.returnJedis(jedis);
+        NetCommandSTB netCommandSTB = new NetCommandSTB("updateServer", getServer().getIp()+"."+serverName+"."+getServer().getPort());
         netCommandSTB.addArg("currentPlayers", getServer().getOnlinePlayers().length);
         netCommandSTB.addArg("maxPlayers", getServer().getMaxPlayers());
         netCommandSTB.flush();
     }
 
     private void sendHeartbeat() {
-        NetCommandSTSC netCommandSTSC = new NetCommandSTSC("heartbeat", getServer().getIp(), getServer().getPort());
+        Jedis jedis = JedisManager.getJedis();
+        String serverName = jedis.get(getServer().getIp()+"."+getServer().getPort());
+        JedisManager.returnJedis(jedis);
+        NetCommandSTSC netCommandSTSC = new NetCommandSTSC("heartbeat", getServer().getIp(), serverName+"."+getServer().getPort());
+        netCommandSTSC.addArg("currentPlayers", getServer().getOnlinePlayers().length);
         netCommandSTSC.flush();
     }
 
     public void removeServer() {
-        NetCommandSTB netCommandSTB = new NetCommandSTB("removeServer", serverConfig.serverName+"."+getServer().getPort());
+        Jedis jedis = JedisManager.getJedis();
+        String serverName = jedis.get(getServer().getIp()+"."+getServer().getPort());
+        JedisManager.returnJedis(jedis);
+        NetCommandSTB netCommandSTB = new NetCommandSTB("removeServer", serverName+"."+getServer().getPort());
         netCommandSTB.flush();
     }
 
