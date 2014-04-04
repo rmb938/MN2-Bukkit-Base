@@ -1,6 +1,6 @@
 package com.rmb938.bukkit.base;
 
-import com.rmb938.bukkit.base.config.Config;
+import com.rmb938.bukkit.base.config.MainConfig;
 import com.rmb938.bukkit.base.database.UserLoader;
 import com.rmb938.bukkit.base.jedis.NetCommandHandlerBTS;
 import com.rmb938.bukkit.base.jedis.NetCommandHandlerSCTS;
@@ -11,7 +11,6 @@ import com.rmb938.jedis.net.command.server.NetCommandSTB;
 import com.rmb938.jedis.net.command.server.NetCommandSTSC;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.plugin.java.JavaPlugin;
 import redis.clients.jedis.Jedis;
 
@@ -20,15 +19,16 @@ import java.util.logging.Level;
 public class MN2BukkitBase extends JavaPlugin {
 
     private UserLoader userLoader;
-    private Config serverConfig;
+    private MainConfig serverConfig;
 
     @Override
     public void onEnable() {
-        serverConfig = new Config(this);
+        serverConfig = new MainConfig(this);
         try {
             serverConfig.init();
-        } catch (InvalidConfigurationException ex) {
-            getLogger().log(Level.SEVERE, null, ex);
+        } catch (net.cubespace.Yamler.Config.InvalidConfigurationException e) {
+            getLogger().log(Level.SEVERE, null, e);
+            return;
         }
 
         DatabaseAPI.initializeMySQL(serverConfig.mySQL_userName, serverConfig.mySQL_password, serverConfig.mySQL_database, serverConfig.mySQL_address, serverConfig.mySQL_port);
@@ -66,7 +66,7 @@ public class MN2BukkitBase extends JavaPlugin {
         return userLoader;
     }
 
-    public Config getServerConfig() {
+    public MainConfig getServerConfig() {
         return serverConfig;
     }
 
