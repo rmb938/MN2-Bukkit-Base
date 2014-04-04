@@ -2,6 +2,8 @@ package com.rmb938.bukkit.base;
 
 import com.rmb938.bukkit.base.config.Config;
 import com.rmb938.bukkit.base.database.UserLoader;
+import com.rmb938.bukkit.base.jedis.NetCommandHandlerBTS;
+import com.rmb938.bukkit.base.jedis.NetCommandHandlerSCTS;
 import com.rmb938.bukkit.base.listeners.PlayerListener;
 import com.rmb938.database.DatabaseAPI;
 import com.rmb938.jedis.JedisManager;
@@ -34,6 +36,9 @@ public class MN2BukkitBase extends JavaPlugin {
         JedisManager.connectToRedis(serverConfig.redis_address);
         JedisManager.setUpDelegates();
 
+        new NetCommandHandlerBTS(this);
+        new NetCommandHandlerSCTS(this);
+
         userLoader = new UserLoader(this);
         new PlayerListener(this);
 
@@ -51,6 +56,9 @@ public class MN2BukkitBase extends JavaPlugin {
         Jedis jedis = JedisManager.getJedis();
         jedis.del(getServer().getIp()+"."+getServer().getPort());
         JedisManager.returnJedis(jedis);
+
+        removeServer();
+
         JedisManager.shutDown();
     }
 
@@ -85,6 +93,7 @@ public class MN2BukkitBase extends JavaPlugin {
         String serverName = jedis.get(getServer().getIp()+"."+getServer().getPort());
         JedisManager.returnJedis(jedis);
         NetCommandSTSC netCommandSTSC = new NetCommandSTSC("heartbeat", getServer().getPort(), getServer().getIp());
+        netCommandSTSC.addArg("serverName", serverName);
         netCommandSTSC.addArg("currentPlayers", getServer().getOnlinePlayers().length);
         netCommandSTSC.flush();
     }
@@ -95,6 +104,9 @@ public class MN2BukkitBase extends JavaPlugin {
         JedisManager.returnJedis(jedis);
         NetCommandSTB netCommandSTB = new NetCommandSTB("removeServer", serverName+"."+getServer().getPort());
         netCommandSTB.flush();
+
+        NetCommandSTSC netCommandSTSC = new NetCommandSTSC("removeServer", getServer().getPort(), getServer().getIp());
+        netCommandSTSC.flush();
     }
 
 }
