@@ -1,7 +1,9 @@
 package com.rmb938.bukkit.base;
 
 import com.rmb938.bukkit.base.config.MainConfig;
+import com.rmb938.bukkit.base.config.WorldConfig;
 import com.rmb938.bukkit.base.database.UserLoader;
+import com.rmb938.bukkit.base.entity.info.WorldInfo;
 import com.rmb938.bukkit.base.jedis.NetCommandHandlerBTS;
 import com.rmb938.bukkit.base.jedis.NetCommandHandlerSCTS;
 import com.rmb938.bukkit.base.listeners.PlayerListener;
@@ -9,11 +11,13 @@ import com.rmb938.database.DatabaseAPI;
 import com.rmb938.jedis.JedisManager;
 import com.rmb938.jedis.net.command.server.NetCommandSTB;
 import com.rmb938.jedis.net.command.server.NetCommandSTSC;
+import net.cubespace.Yamler.Config.InvalidConfigurationException;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import redis.clients.jedis.Jedis;
 
+import java.io.File;
 import java.util.logging.Level;
 
 public class MN2BukkitBase extends JavaPlugin {
@@ -31,6 +35,23 @@ public class MN2BukkitBase extends JavaPlugin {
         } catch (net.cubespace.Yamler.Config.InvalidConfigurationException e) {
             getLogger().log(Level.SEVERE, null, e);
             return;
+        }
+
+        for (File worldFolder : getServer().getWorldContainer().listFiles()) {
+            if (worldFolder.isDirectory() == false) {
+                continue;
+            }
+            File worldConfigFile = new File(worldFolder, "config.yml");
+            WorldConfig worldConfig = new WorldConfig(worldConfigFile, worldFolder.getName());
+            try {
+                worldConfig.init();
+            } catch (InvalidConfigurationException e) {
+                getLogger().severe("Error loading world config for "+worldConfigFile.getName());
+                getLogger().log(Level.SEVERE, null, e);
+                continue;
+            }
+            WorldInfo worldInfo = new WorldInfo(worldFolder.getName(), worldConfig);
+            WorldInfo.getWorlds().put(worldInfo.getWorldName(), worldInfo);
         }
 
         DatabaseAPI.initializeMySQL(serverConfig.mySQL_userName, serverConfig.mySQL_password, serverConfig.mySQL_database, serverConfig.mySQL_address, serverConfig.mySQL_port);
