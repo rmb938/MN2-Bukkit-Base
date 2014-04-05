@@ -20,6 +20,8 @@ public class MN2BukkitBase extends JavaPlugin {
 
     private UserLoader userLoader;
     private MainConfig serverConfig;
+    private String serverName;
+    private String serverUUID;
 
     @Override
     public void onEnable() {
@@ -38,6 +40,13 @@ public class MN2BukkitBase extends JavaPlugin {
 
         new NetCommandHandlerBTS(this);
         new NetCommandHandlerSCTS(this);
+
+        Jedis jedis = JedisManager.getJedis();
+        serverName = jedis.get(getServer().getIp()+"."+getServer().getPort());
+        serverUUID = jedis.get(getServer().getIp()+"."+getServer().getPort()+".uuid");
+        jedis.del(getServer().getIp()+"."+getServer().getPort());
+        jedis.del(getServer().getIp()+"."+getServer().getPort()+".uuid");
+        JedisManager.returnJedis(jedis);
 
         userLoader = new UserLoader(this);
         new PlayerListener(this);
@@ -62,6 +71,14 @@ public class MN2BukkitBase extends JavaPlugin {
         JedisManager.shutDown();
     }
 
+    public String getServerUUID() {
+        return serverUUID;
+    }
+
+    public String getServerName() {
+        return serverName;
+    }
+
     public UserLoader getUserLoader() {
         return userLoader;
     }
@@ -79,30 +96,25 @@ public class MN2BukkitBase extends JavaPlugin {
     }
 
     private void updateServer() {
-        Jedis jedis = JedisManager.getJedis();
-        String serverName = jedis.get(getServer().getIp()+"."+getServer().getPort());
-        JedisManager.returnJedis(jedis);
-        NetCommandSTB netCommandSTB = new NetCommandSTB("updateServer", getServer().getIp()+"."+serverName+"."+getServer().getPort());
+        NetCommandSTB netCommandSTB = new NetCommandSTB("updateServer", serverUUID);
+        netCommandSTB.addArg("IP", getServer().getIp());
+        netCommandSTB.addArg("port", getServer().getPort());
+        netCommandSTB.addArg("serverName", serverName);
         netCommandSTB.addArg("currentPlayers", getServer().getOnlinePlayers().length);
         netCommandSTB.addArg("maxPlayers", getServer().getMaxPlayers());
         netCommandSTB.flush();
     }
 
     private void sendHeartbeat() {
-        Jedis jedis = JedisManager.getJedis();
-        String serverName = jedis.get(getServer().getIp()+"."+getServer().getPort());
-        JedisManager.returnJedis(jedis);
         NetCommandSTSC netCommandSTSC = new NetCommandSTSC("heartbeat", getServer().getPort(), getServer().getIp());
         netCommandSTSC.addArg("serverName", serverName);
+        netCommandSTSC.addArg("serverUUID", serverUUID);
         netCommandSTSC.addArg("currentPlayers", getServer().getOnlinePlayers().length);
         netCommandSTSC.flush();
     }
 
     public void removeServer() {
-        Jedis jedis = JedisManager.getJedis();
-        String serverName = jedis.get(getServer().getIp()+"."+getServer().getPort());
-        JedisManager.returnJedis(jedis);
-        NetCommandSTB netCommandSTB = new NetCommandSTB("removeServer", serverName+"."+getServer().getPort());
+        NetCommandSTB netCommandSTB = new NetCommandSTB("removeServer", serverUUID);
         netCommandSTB.flush();
 
         NetCommandSTSC netCommandSTSC = new NetCommandSTSC("removeServer", getServer().getPort(), getServer().getIp());
