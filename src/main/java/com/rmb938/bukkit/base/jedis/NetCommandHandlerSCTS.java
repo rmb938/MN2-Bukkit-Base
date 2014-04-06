@@ -34,10 +34,12 @@ public class NetCommandHandlerSCTS extends NetCommandHandler {
             HashMap<String, Object> objectHashMap = objectToHashMap(jsonObject.getJSONObject("data"));
             switch (command) {
                 case "shutdown":
+                    plugin.getServer().getScheduler().cancelTasks(plugin);
+                    plugin.removeServer();
+
                     plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
                         @Override
                         public void run() {
-                            plugin.getServer().getScheduler().cancelTasks(plugin);
                             plugin.getServer().shutdown();
                         }
                     }, 200L);

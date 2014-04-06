@@ -57,23 +57,23 @@ public class MN2BukkitBase extends JavaPlugin {
         JedisManager.connectToRedis(serverConfig.redis_address);
         JedisManager.setUpDelegates();
 
+        new NetCommandHandlerBTS(this);
+        new NetCommandHandlerSCTS(this);
+
         try {
-            JedisManager.returnJedis(JedisManager.getJedis());
+            Jedis jedis = JedisManager.getJedis();
+            String key = getServer().getIp()+"."+getServer().getPort();
+            getLogger().info("Key: "+key);
+            serverName = jedis.get(key);
+            serverUUID = jedis.get(key+".uuid");
+            jedis.del(getServer().getIp()+"."+getServer().getPort());
+            jedis.del(getServer().getIp()+"."+getServer().getPort()+".uuid");
+            JedisManager.returnJedis(jedis);
         } catch (Exception e) {
             getLogger().warning("Unable to connect to redis. Closing");
             getServer().shutdown();
             return;
         }
-
-        new NetCommandHandlerBTS(this);
-        new NetCommandHandlerSCTS(this);
-
-        Jedis jedis = JedisManager.getJedis();
-        serverName = jedis.get(getServer().getIp()+"."+getServer().getPort());
-        serverUUID = jedis.get(getServer().getIp()+"."+getServer().getPort()+".uuid");
-        jedis.del(getServer().getIp()+"."+getServer().getPort());
-        jedis.del(getServer().getIp()+"."+getServer().getPort()+".uuid");
-        JedisManager.returnJedis(jedis);
 
         getLogger().info("Name: "+serverName+" UUID: "+serverUUID);
 
@@ -92,10 +92,7 @@ public class MN2BukkitBase extends JavaPlugin {
     @Override
     public void onDisable() {
         Jedis jedis = JedisManager.getJedis();
-        jedis.del(getServer().getIp()+"."+getServer().getPort());
         JedisManager.returnJedis(jedis);
-
-        removeServer();
 
         JedisManager.shutDown();
     }
