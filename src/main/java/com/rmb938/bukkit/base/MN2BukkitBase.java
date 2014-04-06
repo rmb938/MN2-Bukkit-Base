@@ -12,8 +12,6 @@ import com.rmb938.jedis.JedisManager;
 import com.rmb938.jedis.net.command.server.NetCommandSTB;
 import com.rmb938.jedis.net.command.server.NetCommandSTSC;
 import net.cubespace.Yamler.Config.InvalidConfigurationException;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import redis.clients.jedis.Jedis;
 
@@ -59,6 +57,14 @@ public class MN2BukkitBase extends JavaPlugin {
         JedisManager.connectToRedis(serverConfig.redis_address);
         JedisManager.setUpDelegates();
 
+        try {
+            JedisManager.returnJedis(JedisManager.getJedis());
+        } catch (Exception e) {
+            getLogger().warning("Unable to connect to redis. Closing");
+            getServer().shutdown();
+            return;
+        }
+
         new NetCommandHandlerBTS(this);
         new NetCommandHandlerSCTS(this);
 
@@ -68,6 +74,8 @@ public class MN2BukkitBase extends JavaPlugin {
         jedis.del(getServer().getIp()+"."+getServer().getPort());
         jedis.del(getServer().getIp()+"."+getServer().getPort()+".uuid");
         JedisManager.returnJedis(jedis);
+
+        getLogger().info("Name: "+serverName+" UUID: "+serverUUID);
 
         userLoader = new UserLoader(this);
         new PlayerListener(this);
@@ -108,14 +116,6 @@ public class MN2BukkitBase extends JavaPlugin {
         return serverConfig;
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (command.getName().equalsIgnoreCase("stop")) {
-            return false;
-        }
-        return super.onCommand(sender, command, label, args);
-    }
-
     private void updateServer() {
         NetCommandSTB netCommandSTB = new NetCommandSTB("updateServer", serverUUID);
         netCommandSTB.addArg("IP", getServer().getIp());
@@ -139,6 +139,7 @@ public class MN2BukkitBase extends JavaPlugin {
         netCommandSTB.flush();
 
         NetCommandSTSC netCommandSTSC = new NetCommandSTSC("removeServer", getServer().getPort(), getServer().getIp());
+        netCommandSTSC.addArg("serverUUID", serverUUID);
         netCommandSTSC.flush();
     }
 

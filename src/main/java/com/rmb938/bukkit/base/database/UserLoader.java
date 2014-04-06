@@ -27,7 +27,7 @@ public class UserLoader {
     public void createTable() {
         if (DatabaseAPI.getMySQLDatabase().isTable("mn2_users") == false) {
             DatabaseAPI.getMySQLDatabase().createTable("CREATE TABLE IF NOT EXISTS `mn2_users` (" +
-                    " `userUUID` varchar(36) NOT NULL," +
+                    " `userUUID` varchar(37) NOT NULL," +
                     " `lastUserName` varchar(16) NOT NULL," +
                     " `server` varchar(64) NOT NULL," +
                     " PRIMARY KEY (`userUUID`)" +
@@ -65,7 +65,7 @@ public class UserLoader {
     private void createUser(Player player) {
         Jedis jedis = JedisManager.getJedis();
         JedisManager.returnJedis(jedis);
-        DatabaseAPI.getMySQLDatabase().updateQueryPS("INSERT INTO `mn2_users` (uuid, lastUserName, server) values (?, ?, ?)", player.getUniqueId(), player.getName(), plugin.getServerName());
+        DatabaseAPI.getMySQLDatabase().updateQueryPS("INSERT INTO `mn2_users` (userUUID, lastUserName, server) values (?, ?, ?)", player.getUniqueId(), player.getName(), plugin.getServerName());
     }
 
     public void saveUser(Player player) {
