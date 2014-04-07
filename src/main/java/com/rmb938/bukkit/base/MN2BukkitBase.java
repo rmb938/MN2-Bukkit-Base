@@ -30,6 +30,7 @@ public class MN2BukkitBase extends JavaPlugin {
         serverConfig = new MainConfig(this);
         try {
             serverConfig.init();
+            serverConfig.save();
         } catch (net.cubespace.Yamler.Config.InvalidConfigurationException e) {
             getLogger().log(Level.SEVERE, null, e);
             return;
@@ -77,7 +78,9 @@ public class MN2BukkitBase extends JavaPlugin {
 
         getLogger().info("Name: "+serverName+" UUID: "+serverUUID);
 
-        userLoader = new UserLoader(this);
+        if (serverConfig.users_save == true) {
+            userLoader = new UserLoader(this);
+        }
         new PlayerListener(this);
 
         getServer().getScheduler().runTaskTimer(this, new Runnable() {

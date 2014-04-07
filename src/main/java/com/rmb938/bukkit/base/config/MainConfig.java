@@ -13,6 +13,9 @@ public class MainConfig extends Config {
 		CONFIG_FILE = new File(plugin.getDataFolder(), "config.yml");
 	}
 
+    @Comment("Save users to the database.")
+    public boolean users_save = true;
+
     @Comment("The IP address for the redis server")
 	public String redis_address = "127.0.0.1";
 
