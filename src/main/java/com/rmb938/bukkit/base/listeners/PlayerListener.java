@@ -21,22 +21,18 @@ public class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerJoin(PlayerJoinEvent event) {
-        if (plugin.getServerConfig().users_save == true) {
-            User user = plugin.getUserLoader().getUser(event.getPlayer());
-            if (user == null) {
-                event.getPlayer().kickPlayer("Error loading user data please report.");
-                return;
-            }
-            PostJoinEvent postJoinEvent = new PostJoinEvent(user);
-            Bukkit.getPluginManager().callEvent(postJoinEvent);
+        User user = plugin.getUserLoader().getUser(event.getPlayer());
+        if (user == null) {
+            event.getPlayer().kickPlayer("Error loading user data please report.");
+            return;
         }
+        PostJoinEvent postJoinEvent = new PostJoinEvent(user);
+        Bukkit.getPluginManager().callEvent(postJoinEvent);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuitSave(PlayerQuitEvent event) {
-        if (plugin.getServerConfig().users_save == true) {
-            plugin.getUserLoader().saveUser(event.getPlayer());
-            plugin.getUserLoader().removeUser(event.getPlayer());
-        }
+        plugin.getUserLoader().saveUser(event.getPlayer());
+        plugin.getUserLoader().removeUser(event.getPlayer());
     }
 }

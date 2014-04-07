@@ -64,7 +64,6 @@ public class MN2BukkitBase extends JavaPlugin {
         try {
             Jedis jedis = JedisManager.getJedis();
             String key = getServer().getIp()+"."+getServer().getPort();
-            getLogger().info("Key: "+key);
             serverName = jedis.get(key);
             serverUUID = jedis.get(key+".uuid");
             jedis.del(getServer().getIp()+"."+getServer().getPort());
@@ -78,9 +77,7 @@ public class MN2BukkitBase extends JavaPlugin {
 
         getLogger().info("Name: "+serverName+" UUID: "+serverUUID);
 
-        if (serverConfig.users_save == true) {
-            userLoader = new UserLoader(this);
-        }
+        userLoader = new UserLoader(this);
         new PlayerListener(this);
 
         getServer().getScheduler().runTaskTimer(this, new Runnable() {

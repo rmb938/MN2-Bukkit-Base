@@ -21,7 +21,9 @@ public class UserLoader {
 
     public UserLoader(MN2BukkitBase plugin) {
         this.plugin = plugin;
-        createTable();
+        if (plugin.getServerConfig().users_save) {
+            createTable();
+        }
     }
 
     public void createTable() {
@@ -38,6 +40,14 @@ public class UserLoader {
     public User getUser(Player player) {
         if (users.containsKey(player.getUniqueId())) {
             return users.get(player.getUniqueId());
+        }
+        if (plugin.getServerConfig().users_save == false) {
+            plugin.getLogger().info("User saving is off. User instance for "+player.getName()+" will only be active for current session.");
+            User user = new User();
+            user.setLastUserName(player.getPlayerListName());
+            user.setUserUUID(player.getUniqueId().toString());
+            users.put(player.getUniqueId(), user);
+            return user;
         }
         ArrayList beans = DatabaseAPI.getMySQLDatabase().getBeansInfo("select userUUID, lastUserName from `mn2_users` where userUUID='"+player.getUniqueId().toString()+"'", new BeanListHandler<>(User.class));
         if (beans.isEmpty()) {
@@ -71,6 +81,10 @@ public class UserLoader {
     public void saveUser(Player player) {
         User user = getUser(player);
         if (user == null) {
+            return;
+        }
+        if (plugin.getServerConfig().users_save == false) {
+            plugin.getLogger().info("Using saving is off. Cannot save user for "+player.getName());
             return;
         }
         DatabaseAPI.getMySQLDatabase().updateQueryPS("UPDATE `mn2_users` SET lastUserName = ? where userUUID='"+user.getUserUUID()+"'", player.getName());
