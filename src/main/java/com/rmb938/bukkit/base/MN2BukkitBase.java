@@ -145,6 +145,8 @@ public class MN2BukkitBase extends JavaPlugin {
         jedis.del("lock." + serverName+".key");
         JedisManager.returnJedis(jedis);
 
+        removeServer();
+
         JedisManager.shutDown();
     }
 

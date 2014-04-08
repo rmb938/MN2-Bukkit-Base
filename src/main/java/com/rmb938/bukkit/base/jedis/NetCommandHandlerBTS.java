@@ -35,14 +35,7 @@ public class NetCommandHandlerBTS extends NetCommandHandler {
             switch (command) {
                 case "shutdown":
                     plugin.getServer().getScheduler().cancelTasks(plugin);
-                    plugin.removeServer();
-
-                    plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
-                        @Override
-                        public void run() {
-                            plugin.getServer().shutdown();
-                        }
-                    }, 200L);
+                    plugin.getServer().shutdown();
                     break;
                 default:
                     plugin.getLogger().info("Unknown BTS Command MN2BukkitBase " + command);
