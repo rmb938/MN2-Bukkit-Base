@@ -16,6 +16,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import redis.clients.jedis.Jedis;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Set;
 import java.util.logging.Level;
 
 public class MN2BukkitBase extends JavaPlugin {
@@ -24,6 +26,7 @@ public class MN2BukkitBase extends JavaPlugin {
     private MainConfig serverConfig;
     private String serverName;
     private String serverUUID;
+    private int serverNumber;
 
     @Override
     public void onEnable() {
@@ -75,7 +78,40 @@ public class MN2BukkitBase extends JavaPlugin {
             return;
         }
 
-        getLogger().info("Name: "+serverName+" UUID: "+serverUUID);
+        Jedis jedis = JedisManager.getJedis();
+        while (jedis.setnx("lock." + serverName+".key", System.currentTimeMillis() + 30000 + "") == 0) {
+            String lock = jedis.get("lock." + serverName+".key");
+            long time = Long.parseLong(lock != null ? lock : "0");
+            if (System.currentTimeMillis() > time) {
+                time = Long.parseLong(jedis.getSet("lock." + serverName+".key", System.currentTimeMillis() + 30000 + ""));
+                if (System.currentTimeMillis() < time) {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+            break;
+        }
+
+        Set<String> keys = jedis.keys("server." + serverName + ".*");
+        ArrayList<Integer> ids = new ArrayList<>();
+        int startId = 1;
+        for (String keyName : keys) {
+            int id = Integer.parseInt(keyName.split("\\.")[2]);
+            ids.add(id);
+        }
+
+        while (ids.contains(startId)) {
+            startId += 1;
+        }
+
+        serverNumber = startId;
+
+        jedis.set("server."+serverName+"."+serverNumber, serverUUID);
+        jedis.del("lock." + serverName+".key");
+        JedisManager.returnJedis(jedis);
+
+        getLogger().info("Name: "+serverName+" Number: "+serverNumber+" UUID: "+serverUUID);
 
         userLoader = new UserLoader(this);
         new PlayerListener(this);
@@ -92,6 +128,21 @@ public class MN2BukkitBase extends JavaPlugin {
     @Override
     public void onDisable() {
         Jedis jedis = JedisManager.getJedis();
+        while (jedis.setnx("lock." + serverName+".key", System.currentTimeMillis() + 30000 + "") == 0) {
+            String lock = jedis.get("lock." + serverName+".key");
+            long time = Long.parseLong(lock != null ? lock : "0");
+            if (System.currentTimeMillis() > time) {
+                time = Long.parseLong(jedis.getSet("lock." + serverName+".key", System.currentTimeMillis() + 30000 + ""));
+                if (System.currentTimeMillis() < time) {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+            break;
+        }
+        jedis.del("server."+serverName+"."+serverNumber);
+        jedis.del("lock." + serverName+".key");
         JedisManager.returnJedis(jedis);
 
         JedisManager.shutDown();
