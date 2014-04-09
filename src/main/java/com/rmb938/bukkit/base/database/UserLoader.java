@@ -75,7 +75,7 @@ public class UserLoader {
     private void createUser(Player player) {
         Jedis jedis = JedisManager.getJedis();
         JedisManager.returnJedis(jedis);
-        DatabaseAPI.getMySQLDatabase().updateQueryPS("INSERT INTO `mn2_users` (userUUID, lastUserName, server) values (?, ?, ?)", player.getUniqueId(), player.getName(), plugin.getServerName());
+        DatabaseAPI.getMySQLDatabase().updateQueryPS("INSERT INTO `mn2_users` (userUUID, lastUserName, server) values (?, ?, ?)", player.getUniqueId(), player.getName(), "");
     }
 
     public void saveUser(Player player) {

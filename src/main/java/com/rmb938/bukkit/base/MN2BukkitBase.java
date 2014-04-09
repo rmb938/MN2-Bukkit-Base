@@ -16,17 +16,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 import redis.clients.jedis.Jedis;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Set;
 import java.util.logging.Level;
 
 public class MN2BukkitBase extends JavaPlugin {
 
     private UserLoader userLoader;
     private MainConfig serverConfig;
-    private String serverName;
     private String serverUUID;
-    private int serverNumber;
 
     @Override
     public void onEnable() {
@@ -48,7 +44,7 @@ public class MN2BukkitBase extends JavaPlugin {
             try {
                 worldConfig.init();
             } catch (InvalidConfigurationException e) {
-                getLogger().severe("Error loading world config for "+worldConfigFile.getName());
+                getLogger().severe("Error loading world config for " + worldConfigFile.getName());
                 getLogger().log(Level.SEVERE, null, e);
                 continue;
             }
@@ -66,52 +62,16 @@ public class MN2BukkitBase extends JavaPlugin {
 
         try {
             Jedis jedis = JedisManager.getJedis();
-            String key = getServer().getIp()+"."+getServer().getPort();
-            serverName = jedis.get(key);
-            serverUUID = jedis.get(key+".uuid");
-            jedis.del(getServer().getIp()+"."+getServer().getPort());
-            jedis.del(getServer().getIp()+"."+getServer().getPort()+".uuid");
+            String key = getServer().getIp() + "." + getServer().getPort();
+            serverUUID = jedis.get(key + ".uuid");
+            jedis.del(getServer().getIp() + "." + getServer().getPort());
+            jedis.del(getServer().getIp() + "." + getServer().getPort() + ".uuid");
             JedisManager.returnJedis(jedis);
         } catch (Exception e) {
             getLogger().warning("Unable to connect to redis. Closing");
             getServer().shutdown();
             return;
         }
-
-        Jedis jedis = JedisManager.getJedis();
-        while (jedis.setnx("lock." + serverName+".key", System.currentTimeMillis() + 30000 + "") == 0) {
-            String lock = jedis.get("lock." + serverName+".key");
-            long time = Long.parseLong(lock != null ? lock : "0");
-            if (System.currentTimeMillis() > time) {
-                time = Long.parseLong(jedis.getSet("lock." + serverName+".key", System.currentTimeMillis() + 30000 + ""));
-                if (System.currentTimeMillis() < time) {
-                    continue;
-                }
-            } else {
-                continue;
-            }
-            break;
-        }
-
-        Set<String> keys = jedis.keys("server." + serverName + ".*");
-        ArrayList<Integer> ids = new ArrayList<>();
-        int startId = 1;
-        for (String keyName : keys) {
-            int id = Integer.parseInt(keyName.split("\\.")[2]);
-            ids.add(id);
-        }
-
-        while (ids.contains(startId)) {
-            startId += 1;
-        }
-
-        serverNumber = startId;
-
-        jedis.set("server."+serverName+"."+serverNumber, serverUUID);
-        jedis.del("lock." + serverName+".key");
-        JedisManager.returnJedis(jedis);
-
-        getLogger().info("Name: "+serverName+" Number: "+serverNumber+" UUID: "+serverUUID);
 
         userLoader = new UserLoader(this);
         new PlayerListener(this);
@@ -128,11 +88,11 @@ public class MN2BukkitBase extends JavaPlugin {
     @Override
     public void onDisable() {
         Jedis jedis = JedisManager.getJedis();
-        while (jedis.setnx("lock." + serverName+".key", System.currentTimeMillis() + 30000 + "") == 0) {
-            String lock = jedis.get("lock." + serverName+".key");
+        while (jedis.setnx("lock." + getServer().getServerName().split("\\.")[0] + ".key", System.currentTimeMillis() + 30000 + "") == 0) {
+            String lock = jedis.get("lock." + getServer().getServerName().split("\\.")[0] + ".key");
             long time = Long.parseLong(lock != null ? lock : "0");
             if (System.currentTimeMillis() > time) {
-                time = Long.parseLong(jedis.getSet("lock." + serverName+".key", System.currentTimeMillis() + 30000 + ""));
+                time = Long.parseLong(jedis.getSet("lock." + getServer().getServerName().split("\\.")[0] + ".key", System.currentTimeMillis() + 30000 + ""));
                 if (System.currentTimeMillis() < time) {
                     continue;
                 }
@@ -141,8 +101,8 @@ public class MN2BukkitBase extends JavaPlugin {
             }
             break;
         }
-        jedis.del("server."+serverName+"."+serverNumber);
-        jedis.del("lock." + serverName+".key");
+        jedis.del("server." + getServer().getServerName());
+        jedis.del("lock." + getServer().getServerName().split("\\.")[0] + ".key");
         JedisManager.returnJedis(jedis);
 
         removeServer();
@@ -154,9 +114,6 @@ public class MN2BukkitBase extends JavaPlugin {
         return serverUUID;
     }
 
-    public String getServerName() {
-        return serverName;
-    }
 
     public UserLoader getUserLoader() {
         return userLoader;
@@ -170,7 +127,7 @@ public class MN2BukkitBase extends JavaPlugin {
         NetCommandSTB netCommandSTB = new NetCommandSTB("updateServer", serverUUID);
         netCommandSTB.addArg("IP", getServer().getIp());
         netCommandSTB.addArg("port", getServer().getPort());
-        netCommandSTB.addArg("serverName", serverName);
+        netCommandSTB.addArg("serverName", getServer().getServerName());
         netCommandSTB.addArg("currentPlayers", getServer().getOnlinePlayers().length);
         netCommandSTB.addArg("maxPlayers", getServer().getMaxPlayers());
         netCommandSTB.flush();
@@ -178,7 +135,7 @@ public class MN2BukkitBase extends JavaPlugin {
 
     private void sendHeartbeat() {
         NetCommandSTSC netCommandSTSC = new NetCommandSTSC("heartbeat", getServer().getPort(), getServer().getIp());
-        netCommandSTSC.addArg("serverName", serverName);
+        netCommandSTSC.addArg("serverName", getServer().getServerName().split("\\.")[0]);
         netCommandSTSC.addArg("serverUUID", serverUUID);
         netCommandSTSC.addArg("currentPlayers", getServer().getOnlinePlayers().length);
         netCommandSTSC.flush();
