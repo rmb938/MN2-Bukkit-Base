@@ -38,7 +38,7 @@ public class NetCommandHandlerBTS extends NetCommandHandler {
                     plugin.getServer().shutdown();
                     break;
                 default:
-                    plugin.getLogger().info("Unknown BTS Command MN2BukkitBase " + command);
+                    break;
             }
         } catch (JSONException e) {
             plugin.getLogger().log(Level.SEVERE, null, e);

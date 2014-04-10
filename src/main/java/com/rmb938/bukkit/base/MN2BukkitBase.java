@@ -92,7 +92,11 @@ public class MN2BukkitBase extends JavaPlugin {
             String lock = jedis.get("lock." + getServer().getServerName().split("\\.")[0] + ".key");
             long time = Long.parseLong(lock != null ? lock : "0");
             if (System.currentTimeMillis() > time) {
-                time = Long.parseLong(jedis.getSet("lock." + getServer().getServerName().split("\\.")[0] + ".key", System.currentTimeMillis() + 30000 + ""));
+                try {
+                    time = Long.parseLong(jedis.getSet("lock." + getServer().getServerName().split("\\.")[0] + ".key", System.currentTimeMillis() + 30000 + ""));
+                } catch (Exception ex) {
+                    time = 0;
+                }
                 if (System.currentTimeMillis() < time) {
                     continue;
                 }
@@ -101,7 +105,10 @@ public class MN2BukkitBase extends JavaPlugin {
             }
             break;
         }
-        jedis.del("server." + getServer().getServerName());
+        String uuid = jedis.get("server." + getServer().getServerName());
+        if (uuid.equals(serverUUID)) {
+            jedis.del("server." + getServer().getServerName());
+        }
         jedis.del("lock." + getServer().getServerName().split("\\.")[0] + ".key");
         JedisManager.returnJedis(jedis);
 
@@ -139,6 +146,15 @@ public class MN2BukkitBase extends JavaPlugin {
         netCommandSTSC.addArg("serverUUID", serverUUID);
         netCommandSTSC.addArg("currentPlayers", getServer().getOnlinePlayers().length);
         netCommandSTSC.flush();
+        Jedis jedis = JedisManager.getJedis();
+        String uuid = jedis.get("server." + getServer().getServerName());
+        if (uuid.equals(serverUUID)) {
+            jedis.expire("server." + getServer().getServerName(), 60);
+        } else {
+            getLogger().severe("UUID doesn't match jedis. Shutting Down.");
+            getServer().shutdown();
+        }
+        JedisManager.returnJedis(jedis);
     }
 
     public void removeServer() {
