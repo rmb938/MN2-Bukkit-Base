@@ -46,6 +46,13 @@ public class UserLoader {
             User user = new User();
             user.setLastUserName(player.getPlayerListName());
             user.setUserUUID(player.getUniqueId().toString());
+
+            for (UserInfoLoader userInfoLoader : UserInfoLoader.getUserInfoLoaders().values()) {
+                if (userInfoLoader.loadUserInfo(user) == null) {
+                    userInfoLoader.createTempUserInfo(user);
+                }
+            }
+
             users.put(player.getUniqueId(), user);
             return user;
         }
@@ -88,7 +95,7 @@ public class UserLoader {
             return;
         }
         DatabaseAPI.getMySQLDatabase().updateQueryPS("UPDATE `mn2_users` SET lastUserName = ? where userUUID='"+user.getUserUUID()+"'", player.getName());
-        for (UserInfo userInfo : user.getUserInfo()) {
+        for (UserInfo userInfo : user.getUserInfo().values()) {
             UserInfoLoader.getUserInfoLoaders().get(userInfo.getUserInfoName()).saveUserInfo(user);
         }
         plugin.getLogger().info("Saved User " + player.getName()+" ("+user.getUserUUID()+")");

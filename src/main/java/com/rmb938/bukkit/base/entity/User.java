@@ -2,13 +2,13 @@ package com.rmb938.bukkit.base.entity;
 
 import com.rmb938.bukkit.base.entity.info.UserInfo;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 
 public class User {
 
     private String userUUID;
     private String lastUserName;
-    private ArrayList<UserInfo> userInfo = new ArrayList<>();
+    private HashMap<Class<? extends UserInfo>, UserInfo> userInfo = new HashMap<>();
 
     public String getUserUUID() {
         return userUUID;
@@ -26,7 +26,7 @@ public class User {
         this.lastUserName = lastUserName;
     }
 
-    public ArrayList<UserInfo> getUserInfo() {
+    public HashMap<Class<? extends UserInfo>, UserInfo> getUserInfo() {
         return userInfo;
     }
 }

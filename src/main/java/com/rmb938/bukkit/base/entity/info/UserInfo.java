@@ -4,7 +4,7 @@ public class UserInfo {
 
     private final String userInfoName;
 
-    private UserInfo(String userInfoName) {
+    public UserInfo(String userInfoName) {
         this.userInfoName = userInfoName;
     }
 
