@@ -26,6 +26,12 @@ public class MN2BukkitBase extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        getLogger().warning("--------------------------------------------------");
+        getLogger().warning("Multi-Node Minecraft Network is under the Creative Commons");
+        getLogger().warning("Attribution-NonCommercial 4.0 International Public License");
+        getLogger().warning("If you are using this in a commercial environment you MUST");
+        getLogger().warning("obtain written permission.");
+        getLogger().warning("--------------------------------------------------");
         serverConfig = new MainConfig(this);
         try {
             serverConfig.init();
