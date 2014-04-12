@@ -20,7 +20,7 @@ import java.util.logging.Level;
 
 public class MN2BukkitBase extends JavaPlugin {
 
-    private UserLoader userLoader;
+    private static UserLoader userLoader;
     private MainConfig serverConfig;
     private String serverUUID;
 
@@ -58,7 +58,7 @@ public class MN2BukkitBase extends JavaPlugin {
             WorldInfo.getWorlds().put(worldInfo.getWorldName(), worldInfo);
         }
 
-        DatabaseAPI.initializeMySQL(serverConfig.mySQL_userName, serverConfig.mySQL_password, serverConfig.mySQL_database, serverConfig.mySQL_address, serverConfig.mySQL_port);
+        DatabaseAPI.initializeMongo(serverConfig.mongo_database, serverConfig.mongo_address, serverConfig.mongo_port);
 
         JedisManager.connectToRedis(serverConfig.redis_address);
         JedisManager.setUpDelegates();
@@ -128,7 +128,7 @@ public class MN2BukkitBase extends JavaPlugin {
     }
 
 
-    public UserLoader getUserLoader() {
+    public static UserLoader getUserLoader() {
         return userLoader;
     }
 

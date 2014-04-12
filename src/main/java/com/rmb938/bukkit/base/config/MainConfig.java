@@ -13,21 +13,14 @@ public class MainConfig extends Config {
 		CONFIG_FILE = new File(plugin.getDataFolder(), "config.yml");
 	}
 
-    @Comment("Save users to the database.")
-    public boolean users_save = true;
-
     @Comment("The IP address for the redis server")
 	public String redis_address = "127.0.0.1";
 
-    @Comment("The IP address from the mySQL server")
-    public String mySQL_address = "127.0.0.1";
-    @Comment("The port for the mySQL server")
-    public int mySQL_port = 3306;
-    @Comment("The username for the mySQL server")
-    public String mySQL_userName = "userName";
-    @Comment("The password for the mySQL server")
-    public String mySQL_password = "password";
-    @Comment("The database name for the mySQL server")
-    public String mySQL_database = "database";
+    @Comment("The IP address from the mongo server")
+    public String mongo_address = "127.0.0.1";
+    @Comment("The port for the mongo server")
+    public int mongo_port = 27017;
+    @Comment("The database name for the mongo server")
+    public String mongo_database = "minecraft";
 
 }
