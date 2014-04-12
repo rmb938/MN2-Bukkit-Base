@@ -63,7 +63,7 @@ public class UserLoader {
         if (user == null) {
             return;
         }
-        DatabaseAPI.getMongoDatabase().updateDocument("mn2_users", new BasicDBObject("userUUID", user.getUserUUID()), new BasicDBObject("lastUserName", player.getName()));
+        DatabaseAPI.getMongoDatabase().updateDocument("mn2_users", new BasicDBObject("userUUID", user.getUserUUID()), new BasicDBObject("$set", new BasicDBObject("lastUserName", player.getName())));
         plugin.getLogger().info("Saved User " + player.getName()+" ("+user.getUserUUID()+")");
     }
 
