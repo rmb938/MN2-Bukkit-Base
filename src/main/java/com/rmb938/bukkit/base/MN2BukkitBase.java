@@ -20,8 +20,7 @@ import java.util.logging.Level;
 
 public class MN2BukkitBase extends JavaPlugin {
 
-    private static UserLoader userLoader;
-    private MainConfig serverConfig;
+    private UserLoader userLoader;
     private String serverUUID;
 
     @Override
@@ -32,7 +31,7 @@ public class MN2BukkitBase extends JavaPlugin {
         getLogger().warning("If you are using this in a commercial environment you MUST");
         getLogger().warning("obtain written permission.");
         getLogger().warning("--------------------------------------------------");
-        serverConfig = new MainConfig(this);
+        MainConfig serverConfig = new MainConfig(this);
         try {
             serverConfig.init();
             serverConfig.save();
@@ -128,12 +127,8 @@ public class MN2BukkitBase extends JavaPlugin {
     }
 
 
-    public static UserLoader getUserLoader() {
+    public UserLoader getUserLoader() {
         return userLoader;
-    }
-
-    public MainConfig getServerConfig() {
-        return serverConfig;
     }
 
     private void updateServer() {

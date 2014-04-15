@@ -16,10 +16,16 @@ public abstract class UserInfoLoader<T extends UserInfo> {
         return userInfoLoaders;
     }
 
+    private MN2BukkitBase plugin;
+
     public UserInfoLoader(Class<? extends UserInfo> userInfo) {
-        MN2BukkitBase plugin = (MN2BukkitBase) Bukkit.getPluginManager().getPlugin("MN2BukkitBase");
+        plugin = (MN2BukkitBase) Bukkit.getPluginManager().getPlugin("MN2BukkitBase");
             createTable();
         UserInfoLoader.getUserInfoLoaders().put(userInfo, this);
+    }
+
+    public MN2BukkitBase getPlugin() {
+        return plugin;
     }
 
     public abstract void createTable();
@@ -28,6 +34,6 @@ public abstract class UserInfoLoader<T extends UserInfo> {
 
     public abstract void createUserInfo(User user, Player player);
 
-    public abstract void saveUserInfo(User user, Player player);
+    public abstract void saveUserInfo(User user, Player player, boolean remove);
 
 }

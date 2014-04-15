@@ -4,6 +4,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.rmb938.bukkit.base.MN2BukkitBase;
 import com.rmb938.bukkit.base.entity.User;
+import com.rmb938.bukkit.base.entity.info.UserInfo;
 import com.rmb938.database.DatabaseAPI;
 import org.bukkit.entity.Player;
 
@@ -58,16 +59,23 @@ public class UserLoader {
                 new BasicDBObject("userUUID", player.getUniqueId().toString()).append("lastUserName", player.getName()).append("server", plugin.getServer().getServerName().split("\\.")[0]));
     }
 
-    public void saveUser(Player player) {
+    public void saveUser(Player player, boolean remove) {
         User user = getUser(player);
         if (user == null) {
             return;
         }
+        for (UserInfo userInfo : user.getUserInfo().values()) {
+            UserInfoLoader userInfoLoader = UserInfoLoader.getUserInfoLoaders().get(userInfo.getClass());
+            userInfoLoader.saveUserInfo(user, player, remove);
+        }
         DatabaseAPI.getMongoDatabase().updateDocument("mn2_users", new BasicDBObject("userUUID", user.getUserUUID()), new BasicDBObject("$set", new BasicDBObject("lastUserName", player.getName())));
-        plugin.getLogger().info("Saved User " + player.getName()+" ("+user.getUserUUID()+")");
+        plugin.getLogger().info("Saved User " + player.getName() + " (" + user.getUserUUID() + ")");
+        if (remove == true) {
+            removeUser(player);
+        }
     }
 
-    public void removeUser(Player player) {
+    private void removeUser(Player player) {
         users.remove(player.getUniqueId());
     }
 

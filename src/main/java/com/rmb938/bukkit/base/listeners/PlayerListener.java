@@ -19,7 +19,7 @@ public class PlayerListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerJoin(PlayerJoinEvent event) {
         User user = plugin.getUserLoader().getUser(event.getPlayer());
         if (user == null) {
@@ -32,7 +32,6 @@ public class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuitSave(PlayerQuitEvent event) {
-        plugin.getUserLoader().saveUser(event.getPlayer());
-        plugin.getUserLoader().removeUser(event.getPlayer());
+        plugin.getUserLoader().saveUser(event.getPlayer(), true);
     }
 }
