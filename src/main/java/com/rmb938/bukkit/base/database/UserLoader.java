@@ -55,8 +55,9 @@ public class UserLoader {
     }
 
     private void createUser(Player player) {
-        DatabaseAPI.getMongoDatabase().insert("mn2_users",
-                new BasicDBObject("userUUID", player.getUniqueId().toString()).append("lastUserName", player.getName()).append("server", plugin.getServer().getServerName().split("\\.")[0]));
+        //Should be created by bungee
+        /*DatabaseAPI.getMongoDatabase().insert("mn2_users",
+                new BasicDBObject("userUUID", player.getUniqueId().toString()).append("lastUserName", player.getName()).append("server", plugin.getServer().getServerName().split("\\.")[0]));*/
     }
 
     public void saveUser(Player player, boolean remove) {

@@ -10,9 +10,10 @@ import com.rmb938.bukkit.base.listeners.PlayerListener;
 import com.rmb938.database.DatabaseAPI;
 import com.rmb938.jedis.JedisManager;
 import com.rmb938.jedis.net.command.server.NetCommandSTB;
-import com.rmb938.jedis.net.command.server.NetCommandSTSC;
 import net.cubespace.Yamler.Config.InvalidConfigurationException;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.json.JSONException;
+import org.json.JSONObject;
 import redis.clients.jedis.Jedis;
 
 import java.io.File;
@@ -67,10 +68,9 @@ public class MN2BukkitBase extends JavaPlugin {
 
         try {
             Jedis jedis = JedisManager.getJedis();
-            String key = getServer().getIp() + "." + getServer().getPort();
-            serverUUID = jedis.get(key + ".uuid");
-            jedis.del(getServer().getIp() + "." + getServer().getPort());
-            jedis.del(getServer().getIp() + "." + getServer().getPort() + ".uuid");
+            String data = jedis.get("server." + getServer().getServerName());
+            JSONObject jsonObject = new JSONObject(data);
+            serverUUID = jsonObject.getString("uuid");
             JedisManager.returnJedis(jedis);
         } catch (Exception e) {
             getLogger().warning("Unable to connect to redis. Closing");
@@ -84,7 +84,7 @@ public class MN2BukkitBase extends JavaPlugin {
         getServer().getScheduler().runTaskTimer(this, new Runnable() {
             @Override
             public void run() {
-                updateServer();
+                addServer();
                 sendHeartbeat();
             }
         }, 200L, 200L);
@@ -93,28 +93,18 @@ public class MN2BukkitBase extends JavaPlugin {
     @Override
     public void onDisable() {
         Jedis jedis = JedisManager.getJedis();
-        while (jedis.setnx("lock." + getServer().getServerName().split("\\.")[0] + ".key", System.currentTimeMillis() + 30000 + "") == 0) {
-            String lock = jedis.get("lock." + getServer().getServerName().split("\\.")[0] + ".key");
-            long time = Long.parseLong(lock != null ? lock : "0");
-            if (System.currentTimeMillis() > time) {
-                try {
-                    time = Long.parseLong(jedis.getSet("lock." + getServer().getServerName().split("\\.")[0] + ".key", System.currentTimeMillis() + 30000 + ""));
-                } catch (Exception ex) {
-                    time = 0;
-                }
-                if (System.currentTimeMillis() < time) {
-                    continue;
-                }
-            } else {
-                continue;
+        String data = jedis.get("server." + getServer().getServerName());
+        try {
+            JSONObject jsonObject = new JSONObject(data);
+            String uuid = jsonObject.getString("uuid");
+            if (uuid.equals(serverUUID)) {
+                jedis.del("server." + getServer().getServerName());
             }
-            break;
+        } catch (JSONException e) {
+            getLogger().severe("Error getting JSON server info.");
+        } finally {
+            JedisManager.returnJedis(jedis);
         }
-        String uuid = jedis.get("server." + getServer().getServerName());
-        if (uuid.equals(serverUUID)) {
-            jedis.del("server." + getServer().getServerName());
-        }
-        jedis.del("lock." + getServer().getServerName().split("\\.")[0] + ".key");
         JedisManager.returnJedis(jedis);
 
         removeServer();
@@ -131,40 +121,45 @@ public class MN2BukkitBase extends JavaPlugin {
         return userLoader;
     }
 
-    private void updateServer() {
-        NetCommandSTB netCommandSTB = new NetCommandSTB("updateServer", serverUUID);
+    private void addServer() {
+        NetCommandSTB netCommandSTB = new NetCommandSTB("addServer", serverUUID);
         netCommandSTB.addArg("IP", getServer().getIp());
         netCommandSTB.addArg("port", getServer().getPort());
         netCommandSTB.addArg("serverName", getServer().getServerName());
-        netCommandSTB.addArg("currentPlayers", getServer().getOnlinePlayers().length);
         netCommandSTB.addArg("maxPlayers", getServer().getMaxPlayers());
         netCommandSTB.flush();
     }
 
     private void sendHeartbeat() {
-        NetCommandSTSC netCommandSTSC = new NetCommandSTSC("heartbeat", getServer().getPort(), getServer().getIp());
-        netCommandSTSC.addArg("serverName", getServer().getServerName().split("\\.")[0]);
-        netCommandSTSC.addArg("serverUUID", serverUUID);
-        netCommandSTSC.addArg("currentPlayers", getServer().getOnlinePlayers().length);
-        netCommandSTSC.flush();
         Jedis jedis = JedisManager.getJedis();
-        String uuid = jedis.get("server." + getServer().getServerName());
-        if (uuid.equals(serverUUID)) {
-            jedis.expire("server." + getServer().getServerName(), 60);
-        } else {
-            getLogger().severe("UUID doesn't match jedis. Shutting Down.");
+        String data = jedis.get("server." + getServer().getServerName());
+        try {
+            JSONObject jsonObject = new JSONObject(data);
+            String uuid = jsonObject.getString("uuid");
+            if (uuid.equals(serverUUID)) {
+                if (getServer().getOnlinePlayers().length == 0) {
+                    jsonObject.put("timeEmpty", jsonObject.getInt("timeEmpty")+5);
+                } else {
+                    jsonObject.put("timeEmpty", 0);
+                }
+                jsonObject.put("currentPlayers", getServer().getOnlinePlayers().length);
+                jedis.set("server." + getServer().getServerName(), jsonObject.toString());
+                jedis.expire("server." + getServer().getServerName(), 60);
+            } else {
+                getLogger().severe("UUID doesn't match jedis. Shutting Down.");
+                getServer().shutdown();
+            }
+        } catch (JSONException e) {
+            getLogger().severe("Error getting JSON server info. Shutting down");
             getServer().shutdown();
+        } finally {
+            JedisManager.returnJedis(jedis);
         }
-        JedisManager.returnJedis(jedis);
     }
 
     public void removeServer() {
         NetCommandSTB netCommandSTB = new NetCommandSTB("removeServer", serverUUID);
         netCommandSTB.flush();
-
-        NetCommandSTSC netCommandSTSC = new NetCommandSTSC("removeServer", getServer().getPort(), getServer().getIp());
-        netCommandSTSC.addArg("serverUUID", serverUUID);
-        netCommandSTSC.flush();
     }
 
 }
