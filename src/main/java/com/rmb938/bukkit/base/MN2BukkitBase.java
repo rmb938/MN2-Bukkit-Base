@@ -138,7 +138,7 @@ public class MN2BukkitBase extends JavaPlugin {
             String uuid = jsonObject.getString("uuid");
             if (uuid.equals(serverUUID)) {
                 if (getServer().getOnlinePlayers().length == 0) {
-                    jsonObject.put("timeEmpty", jsonObject.getInt("timeEmpty")+5);
+                    jsonObject.put("timeEmpty", jsonObject.getInt("timeEmpty") + 10);
                 } else {
                     jsonObject.put("timeEmpty", 0);
                 }
