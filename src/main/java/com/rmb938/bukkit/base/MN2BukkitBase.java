@@ -21,7 +21,7 @@ import java.util.logging.Level;
 
 public class MN2BukkitBase extends JavaPlugin {
 
-    private UserLoader userLoader;
+    private static UserLoader userLoader;
     private String serverUUID;
 
     @Override
@@ -105,7 +105,6 @@ public class MN2BukkitBase extends JavaPlugin {
         } finally {
             JedisManager.returnJedis(jedis);
         }
-        JedisManager.returnJedis(jedis);
 
         removeServer();
 
@@ -117,7 +116,7 @@ public class MN2BukkitBase extends JavaPlugin {
     }
 
 
-    public UserLoader getUserLoader() {
+    public static UserLoader getUserLoader() {
         return userLoader;
     }
 

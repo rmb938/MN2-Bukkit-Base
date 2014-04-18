@@ -19,10 +19,10 @@ public class UserLoader {
 
     public UserLoader(MN2BukkitBase plugin) {
         this.plugin = plugin;
-            createTable();
+        createTable();
     }
 
-    public void createTable() {
+    private void createTable() {
         if (DatabaseAPI.getMongoDatabase().collectionExists("mn2_users") == false) {
             DatabaseAPI.getMongoDatabase().createCollection("mn2_users");
         }
@@ -35,8 +35,8 @@ public class UserLoader {
         DBObject userObject = DatabaseAPI.getMongoDatabase().findOne("mn2_users", new BasicDBObject("userUUID", player.getUniqueId().toString()));
         if (userObject == null) {
             plugin.getLogger().info("No user found for "+player.getName()+" ("+player.getUniqueId().toString()+") creating new user.");
-            createUser(player);
-            return getUser(player);
+            player.kickPlayer("Unknown MN2 Profile");
+            return null;
         }
 
         User user = new User();
@@ -54,12 +54,6 @@ public class UserLoader {
         return user;
     }
 
-    private void createUser(Player player) {
-        //Should be created by bungee
-        /*DatabaseAPI.getMongoDatabase().insert("mn2_users",
-                new BasicDBObject("userUUID", player.getUniqueId().toString()).append("lastUserName", player.getName()).append("server", plugin.getServer().getServerName().split("\\.")[0]));*/
-    }
-
     public void saveUser(Player player, boolean remove) {
         User user = getUser(player);
         if (user == null) {
@@ -72,12 +66,8 @@ public class UserLoader {
         DatabaseAPI.getMongoDatabase().updateDocument("mn2_users", new BasicDBObject("userUUID", user.getUserUUID()), new BasicDBObject("$set", new BasicDBObject("lastUserName", player.getName())));
         plugin.getLogger().info("Saved User " + player.getName() + " (" + user.getUserUUID() + ")");
         if (remove == true) {
-            removeUser(player);
+            users.remove(player.getUniqueId());
         }
-    }
-
-    private void removeUser(Player player) {
-        users.remove(player.getUniqueId());
     }
 
 }
