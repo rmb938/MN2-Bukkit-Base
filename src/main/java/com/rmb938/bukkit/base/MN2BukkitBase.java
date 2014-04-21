@@ -27,7 +27,7 @@ public class MN2BukkitBase extends JavaPlugin {
         return userLoader;
     }
 
-    private String serverUUID;
+    private static String serverUUID;
 
     @Override
     public void onEnable() {
@@ -121,7 +121,7 @@ public class MN2BukkitBase extends JavaPlugin {
         JedisManager.shutDown();
     }
 
-    public String getServerUUID() {
+    public static String getServerUUID() {
         return serverUUID;
     }
 
