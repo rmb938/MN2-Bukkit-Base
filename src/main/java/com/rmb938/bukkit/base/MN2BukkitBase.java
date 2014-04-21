@@ -22,6 +22,11 @@ import java.util.logging.Level;
 public class MN2BukkitBase extends JavaPlugin {
 
     private static UserLoader userLoader;
+
+    public static UserLoader getUserLoader() {
+        return userLoader;
+    }
+
     private String serverUUID;
 
     @Override
@@ -57,8 +62,13 @@ public class MN2BukkitBase extends JavaPlugin {
             WorldInfo worldInfo = new WorldInfo(worldFolder.getName(), worldConfig);
             WorldInfo.getWorlds().put(worldInfo.getWorldName(), worldInfo);
         }
-
-        DatabaseAPI.initializeMongo(serverConfig.mongo_database, serverConfig.mongo_address, serverConfig.mongo_port);
+        try {
+            DatabaseAPI.initializeMongo(serverConfig.mongo_database, serverConfig.mongo_address, serverConfig.mongo_port);
+        } catch (Exception e) {
+            getLogger().warning("Unable to connect to mongo. Closing");
+            getServer().shutdown();
+            return;
+        }
 
         JedisManager.connectToRedis(serverConfig.redis_address);
         JedisManager.setUpDelegates();
@@ -113,11 +123,6 @@ public class MN2BukkitBase extends JavaPlugin {
 
     public String getServerUUID() {
         return serverUUID;
-    }
-
-
-    public static UserLoader getUserLoader() {
-        return userLoader;
     }
 
     private void addServer() {
