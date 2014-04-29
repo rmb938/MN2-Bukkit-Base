@@ -13,6 +13,9 @@ public class MainConfig extends Config {
 		CONFIG_FILE = new File(plugin.getDataFolder(), "config.yml");
 	}
 
+    @Comment("Set to true to turn on development mode. This mode will not listen for MN2 redis channels.")
+    public boolean development = false;
+
     @Comment("The IP address for the redis server")
 	public String redis_address = "127.0.0.1";
 

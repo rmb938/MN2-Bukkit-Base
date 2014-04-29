@@ -35,7 +35,6 @@ public class UserLoader {
         DBObject userObject = DatabaseAPI.getMongoDatabase().findOne("mn2_users", new BasicDBObject("userUUID", player.getUniqueId().toString()));
         if (userObject == null) {
             plugin.getLogger().info("No user found for "+player.getName()+" ("+player.getUniqueId().toString()+") creating new user.");
-            player.kickPlayer("Unknown MN2 Profile");
             return null;
         }
 
@@ -54,17 +53,20 @@ public class UserLoader {
         return user;
     }
 
-    public void saveUser(Player player, boolean remove) {
-        User user = getUser(player);
+    public void saveUser(final Player player, final boolean remove) {
+        final User user = getUser(player);
         if (user == null) {
             return;
         }
-        for (UserInfo userInfo : user.getUserInfo().values()) {
-            UserInfoLoader userInfoLoader = UserInfoLoader.getUserInfoLoaders().get(userInfo.getClass());
-            userInfoLoader.saveUserInfo(user, player, remove);
-        }
-        DatabaseAPI.getMongoDatabase().updateDocument("mn2_users", new BasicDBObject("userUUID", user.getUserUUID()), new BasicDBObject("$set", new BasicDBObject("lastUserName", player.getName())));
-        plugin.getLogger().info("Saved User " + player.getName() + " (" + user.getUserUUID() + ")");
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, new Runnable() {
+            @Override
+            public void run() {
+                for (UserInfo userInfo : user.getUserInfo().values()) {
+                    UserInfoLoader userInfoLoader = UserInfoLoader.getUserInfoLoaders().get(userInfo.getClass());
+                    userInfoLoader.saveUserInfo(user, player, remove);
+                }
+            }
+        });
         if (remove == true) {
             users.remove(player.getUniqueId());
         }

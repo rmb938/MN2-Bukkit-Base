@@ -17,6 +17,7 @@ import org.json.JSONObject;
 import redis.clients.jedis.Jedis;
 
 import java.io.File;
+import java.util.UUID;
 import java.util.logging.Level;
 
 public class MN2BukkitBase extends JavaPlugin {
@@ -28,6 +29,7 @@ public class MN2BukkitBase extends JavaPlugin {
     }
 
     private static String serverUUID;
+    private MainConfig serverConfig;
 
     @Override
     public void onEnable() {
@@ -37,7 +39,7 @@ public class MN2BukkitBase extends JavaPlugin {
         getLogger().warning("If you are using this in a commercial environment you MUST");
         getLogger().warning("obtain written permission.");
         getLogger().warning("--------------------------------------------------");
-        MainConfig serverConfig = new MainConfig(this);
+        serverConfig = new MainConfig(this);
         try {
             serverConfig.init();
             serverConfig.save();
@@ -73,50 +75,59 @@ public class MN2BukkitBase extends JavaPlugin {
         JedisManager.connectToRedis(serverConfig.redis_address);
         JedisManager.setUpDelegates();
 
-        new NetCommandHandlerBTS(this);
-        new NetCommandHandlerSCTS(this);
-
-        try {
-            Jedis jedis = JedisManager.getJedis();
-            String data = jedis.get("server." + getServer().getServerName());
-            JSONObject jsonObject = new JSONObject(data);
-            serverUUID = jsonObject.getString("uuid");
-            JedisManager.returnJedis(jedis);
-        } catch (Exception e) {
-            getLogger().warning("Unable to connect to redis. Closing");
-            getServer().shutdown();
-            return;
+        if (serverConfig.development == false) {
+            new NetCommandHandlerBTS(this);
+            new NetCommandHandlerSCTS(this);
+            try {
+                Jedis jedis = JedisManager.getJedis();
+                String data = jedis.get("server." + getServer().getServerName());
+                JSONObject jsonObject = new JSONObject(data);
+                serverUUID = jsonObject.getString("uuid");
+                JedisManager.returnJedis(jedis);
+            } catch (Exception e) {
+                getLogger().warning("Unable to connect to redis. Closing");
+                getServer().shutdown();
+                return;
+            }
+        } else {
+            serverUUID = UUID.randomUUID().toString();
         }
+
+
 
         userLoader = new UserLoader(this);
         new PlayerListener(this);
 
-        getServer().getScheduler().runTaskTimer(this, new Runnable() {
-            @Override
-            public void run() {
-                addServer();
-                sendHeartbeat();
-            }
-        }, 200L, 200L);
+        if (serverConfig.development == false) {
+            getServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
+                @Override
+                public void run() {
+                    addServer();
+                    sendHeartbeat();
+                }
+            }, 200L, 200L);
+        }
     }
 
     @Override
     public void onDisable() {
-        Jedis jedis = JedisManager.getJedis();
-        String data = jedis.get("server." + getServer().getServerName());
-        try {
-            JSONObject jsonObject = new JSONObject(data);
-            String uuid = jsonObject.getString("uuid");
-            if (uuid.equals(serverUUID)) {
-                jedis.del("server." + getServer().getServerName());
+        if (serverConfig.development == false) {
+            Jedis jedis = JedisManager.getJedis();
+            String data = jedis.get("server." + getServer().getServerName());
+            try {
+                JSONObject jsonObject = new JSONObject(data);
+                String uuid = jsonObject.getString("uuid");
+                if (uuid.equals(serverUUID)) {
+                    jedis.del("server." + getServer().getServerName());
+                }
+            } catch (JSONException e) {
+                getLogger().severe("Error getting JSON server info.");
+            } finally {
+                JedisManager.returnJedis(jedis);
             }
-        } catch (JSONException e) {
-            getLogger().severe("Error getting JSON server info.");
-        } finally {
-            JedisManager.returnJedis(jedis);
-        }
 
-        removeServer();
+            removeServer();
+        }
 
         JedisManager.shutDown();
     }
@@ -135,30 +146,30 @@ public class MN2BukkitBase extends JavaPlugin {
     }
 
     private void sendHeartbeat() {
-        Jedis jedis = JedisManager.getJedis();
-        String data = jedis.get("server." + getServer().getServerName());
-        try {
-            JSONObject jsonObject = new JSONObject(data);
-            String uuid = jsonObject.getString("uuid");
-            if (uuid.equals(serverUUID)) {
-                if (getServer().getOnlinePlayers().length == 0) {
-                    jsonObject.put("timeEmpty", jsonObject.getInt("timeEmpty") + 10);
-                } else {
-                    jsonObject.put("timeEmpty", 0);
+        getServer().getScheduler().runTask(this, new Runnable() {
+            @Override
+            public void run() {
+                Jedis jedis = JedisManager.getJedis();
+                String data = jedis.get("server." + getServer().getServerName());
+                try {
+                    JSONObject jsonObject = new JSONObject(data);
+                    String uuid = jsonObject.getString("uuid");
+                    if (uuid.equals(serverUUID)) {
+                        jsonObject.put("currentPlayers", getServer().getOnlinePlayers().length);
+                        jedis.set("server." + getServer().getServerName(), jsonObject.toString());
+                        jedis.expire("server." + getServer().getServerName(), 60);
+                    } else {
+                        getLogger().severe("UUID doesn't match jedis. Shutting Down.");
+                        getServer().shutdown();
+                    }
+                } catch (Exception e) {
+                    getLogger().severe("Error getting JSON server info. Shutting down");
+                    getServer().shutdown();
+                } finally {
+                    JedisManager.returnJedis(jedis);
                 }
-                jsonObject.put("currentPlayers", getServer().getOnlinePlayers().length);
-                jedis.set("server." + getServer().getServerName(), jsonObject.toString());
-                jedis.expire("server." + getServer().getServerName(), 60);
-            } else {
-                getLogger().severe("UUID doesn't match jedis. Shutting Down.");
-                getServer().shutdown();
             }
-        } catch (JSONException e) {
-            getLogger().severe("Error getting JSON server info. Shutting down");
-            getServer().shutdown();
-        } finally {
-            JedisManager.returnJedis(jedis);
-        }
+        });
     }
 
     public void removeServer() {

@@ -21,7 +21,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerJoin(PlayerJoinEvent event) {
-        User user = plugin.getUserLoader().getUser(event.getPlayer());
+        User user = MN2BukkitBase.getUserLoader().getUser(event.getPlayer());
         if (user == null) {
             event.getPlayer().kickPlayer("Error loading user data please report.");
             return;
@@ -32,6 +32,6 @@ public class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuitSave(PlayerQuitEvent event) {
-        plugin.getUserLoader().saveUser(event.getPlayer(), true);
+        MN2BukkitBase.getUserLoader().saveUser(event.getPlayer(), true);
     }
 }

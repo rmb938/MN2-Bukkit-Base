@@ -3,6 +3,7 @@ package com.rmb938.bukkit.base.jedis;
 import com.rmb938.bukkit.base.MN2BukkitBase;
 import com.rmb938.jedis.net.NetChannel;
 import com.rmb938.jedis.net.NetCommandHandler;
+import org.bukkit.ChatColor;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -25,7 +26,7 @@ public class NetCommandHandlerSCTS extends NetCommandHandler {
             String toServer = jsonObject.getString("to");
 
             if (toServer.equalsIgnoreCase("*") == false) {
-                if (toServer.equalsIgnoreCase(plugin.getServerUUID()) == false) {
+                if (toServer.equalsIgnoreCase(MN2BukkitBase.getServerUUID()) == false) {
                     return;
                 }
             }
@@ -35,7 +36,13 @@ public class NetCommandHandlerSCTS extends NetCommandHandler {
             switch (command) {
                 case "shutdown":
                     plugin.getServer().getScheduler().cancelTasks(plugin);
-                    plugin.getServer().shutdown();
+                    plugin.getServer().broadcastMessage(ChatColor.BOLD + "" + ChatColor.UNDERLINE + "" + ChatColor.DARK_RED + "Server is going down for maintenance.");
+                    plugin.getServer().getScheduler().runTaskLater(plugin, new Runnable() {
+                        @Override
+                        public void run() {
+                            plugin.getServer().shutdown();
+                        }
+                    }, 200L);
                     break;
                 default:
                     break;
